@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="com/GDTest/Main.java|api/wireless/gdata/client/HttpQueryParams.java|api/wireless/gdata/client/QueryParams.java" kind="src" path="src"/>
+	<classpathentry excluding="api/wireless/gdata/AllTests.java" kind="src" path="tests/src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
