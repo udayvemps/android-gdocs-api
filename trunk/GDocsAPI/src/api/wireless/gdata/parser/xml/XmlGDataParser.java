@@ -23,6 +23,7 @@ import api.wireless.gdata.data.Entry;
 import api.wireless.gdata.data.Feed;
 import api.wireless.gdata.parser.GDataParser;
 import api.wireless.gdata.parser.ParseException;
+import api.wireless.gdata.util.ContentType;
 import api.wireless.gdata.util.common.base.StringUtil;
 import api.wireless.gdata.util.common.base.XmlUtil;
 
@@ -60,6 +61,9 @@ public class XmlGDataParser implements GDataParser {
 	
 	/** Presentation label */
 	public static final String PRS_LABEL = "presentation";
+	
+	/** File label */
+	public static final String FILE_LABEL = "file";
 	
 	private final InputStream is;
 	private final XmlPullParser parser;
@@ -99,7 +103,7 @@ public class XmlGDataParser implements GDataParser {
 		if (eventType != XmlPullParser.START_DOCUMENT) {
 			throw new ParseException("Attempting to initialize parsing beyond "
 					+ "the start of the document.");
-		}
+		}		
 
 		try {
 			eventType = parser.next();
@@ -176,21 +180,20 @@ public class XmlGDataParser implements GDataParser {
 	 */
 	private final Feed parseFeed() throws XmlPullParserException, IOException {
 		Feed feed = createFeed();
-		// parsing <feed>
-		// not interested in any attributes -- move onto the children.
+		
+		// Get ETAG attributes
+		if (parser.getAttributeCount() > 0) {
+			feed.setEtag(parser.getAttributeValue(NAMESPACE_GD_URI, "etag"));
+		}
+		
+		// look for entries
 		int eventType = parser.next();
 		while (eventType != XmlPullParser.END_DOCUMENT) {
 			switch (eventType) {
 			case XmlPullParser.START_TAG:
 				String name = parser.getName();
-				if ("totalResults".equals(name)) {
-					feed.setTotalResults(StringUtil.parseInt(
-							XmlUtil.extractChildText(parser), 0));
-				} else if ("startIndex".equals(name)) {
+				if ("startIndex".equals(name)) {
 					feed.setStartIndex(StringUtil.parseInt(
-							XmlUtil.extractChildText(parser), 0));
-				} else if ("itemsPerPage".equals(name)) {
-					feed.setItemsPerPage(StringUtil.parseInt(
 							XmlUtil.extractChildText(parser), 0));
 				} else if ("title".equals(name)) {
 					feed.setTitle(XmlUtil.extractChildText(parser));
@@ -209,6 +212,16 @@ public class XmlGDataParser implements GDataParser {
 					if (!StringUtil.isEmpty(categoryScheme)) {
 						feed.setCategoryScheme(categoryScheme);
 					}
+				} else if ("link".equals(name)) {
+					String rel =
+						parser.getAttributeValue(null /* ns */, "rel");
+					String type =
+						parser.getAttributeValue(null /* ns */, "type");
+					String href =
+						parser.getAttributeValue(null /* ns */, "href");
+					if ("next".equals(rel)) {
+						feed.setNext(href);					
+					} 				
 				} else if ("entry".equals(name)) {
 					// stop parsing here.
 					// TODO: pay attention to depth?
@@ -283,7 +296,7 @@ public class XmlGDataParser implements GDataParser {
 			entry.clear();
 		}
 
-		// This is version 2 protocol
+		// This is version 3 protocol
 		if (parser.getAttributeCount() > 0) {
 			entry.setEtag(parser.getAttributeValue(NAMESPACE_GD_URI, "etag"));
 		}
@@ -468,14 +481,19 @@ public class XmlGDataParser implements GDataParser {
 					if (label != null) {
 						if ("starred".equals(label))
 							entry.setStarred(true);
-						if (DOC_LABEL.equals(label))
+						else if (DOC_LABEL.equals(label))
 							entry.setLabel(DOC_LABEL);
-						if (SPS_LABEL.equals(label))
+						else if (SPS_LABEL.equals(label))
 							entry.setLabel(SPS_LABEL);
-						if (PDF_LABEL.equals(label))
+						else if (PDF_LABEL.equals(label))
 							entry.setLabel(PDF_LABEL);
-						if (PRS_LABEL.equals(label))
+						else if (PRS_LABEL.equals(label)){
 							entry.setLabel(PRS_LABEL);
+							entry.setMime(ContentType.PDF.toString());
+						} else if (category.indexOf(FILE_LABEL)>=0){
+							entry.setLabel(FILE_LABEL);
+							entry.setMime(label);
+						}
 					}
 				} else if ("published".equals(name)) {
 					entry.setPublicationDate(

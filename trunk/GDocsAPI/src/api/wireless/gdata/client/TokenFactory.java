@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.Header;
@@ -58,29 +59,78 @@ public class TokenFactory {
 	private String domainName;
 
 	// The protocol used for authentication
-	private String loginProtocol;
+	private String loginProtocol;	
 
 	// Current auth token.
 	private UserToken authToken = null;
+	
+	private ClientLoginAccountType accountType;
 
 	/**
 	 * The path name of the Google login handler.
 	 */
 	public static final String GOOGLE_LOGIN_PATH = "/accounts/ClientLogin";
 
+
+	/**
+	 * The valid values for the "accountType" parameter in ClientLogin.	 
+	 */
+	public enum ClientLoginAccountType {
+	  // Authenticate as a Google account only.
+	  GOOGLE("GOOGLE"),
+	  // Authenticate as a hosted account only.
+	  HOSTED("HOSTED"),
+	  // Authenticate first as a hosted account; if attempt fails, authenticate as a
+	  // Google account.  Use HOSTED_OR_GOOGLE if you're not sure which type of
+	  // account needs authentication. If the user information matches both a hosted
+	  // and a Google account, only the hosted account is authenticated.
+	  HOSTED_OR_GOOGLE("HOSTED_OR_GOOGLE");
+
+	  private final String accountTypeValue;
+
+	  ClientLoginAccountType(String accountTypeValue) {
+	    this.accountTypeValue = accountTypeValue;
+	  }
+
+	  /** Returns the value of the accountType. */
+	  public String getValue() {
+	    return accountTypeValue;
+	  }
+	}
+
+
 	/**
 	 * The UserToken encapsulates the token retrieved as a result of
 	 * authenticating to Google using a user's credentials.
 	 */
 	public static class UserToken {
+		
+		public static final String AUTH = "Auth";
+		public static final String SID = "SID";
 
-		private String token;
+		private HashMap<String, String> tokens;
 
 		public UserToken(String token) {
-			this.token = token;
+			tokens = new HashMap<String, String>();
+			tokens.put(AUTH, token);
+		}
+		
+		public UserToken(HashMap<String, String> tokens) {
+			this.tokens = tokens;
 		}
 
 		public String getValue() {
+			return tokens.get(AUTH);
+		}
+		
+		public HashMap<String, String> getValues() {
+			return tokens;
+		}
+		
+		public String getValue(String key) {
+			String token = null;
+			if (tokens != null)
+				token = tokens.get(key);
 			return token;
 		}
 
@@ -93,16 +143,16 @@ public class TokenFactory {
 		 * @return the "Authorization" header to be used for the request
 		 */
 		public String getAuthorizationHeader() {
-			return "GoogleLogin auth=" + token;
+			return "GoogleLogin auth=" + tokens.get(AUTH);
 		}
 	}
-
 	
 	public TokenFactory(String serviceName, String applicationName) {
 		this.applicationName = applicationName;
 		this.serviceName = serviceName;
 		this.loginProtocol = "https";
-		this.domainName = "www.google.com";		
+		this.domainName = "www.google.com";
+		this.accountType = ClientLoginAccountType.HOSTED_OR_GOOGLE;
 	}
 	
 	protected BasicHeader[] headersToArray(ArrayList<BasicHeader> hdrs) {
@@ -121,8 +171,20 @@ public class TokenFactory {
 	throws AuthenticationException {
 		this.username = username;
 		this.password = password;
-		String token = getAuthToken(username, password, serviceName, applicationName);
-		setAuthToken(token);
+		this.accountType = ClientLoginAccountType.HOSTED_OR_GOOGLE;
+		HashMap<String,String> tokenPairs = getAuthTokens(username, password, serviceName, applicationName, accountType);				
+		setAuthTokens(tokenPairs);
+	}
+	
+	public void setUserCredentials(String username,
+			String password,
+			ClientLoginAccountType accountType)
+	throws AuthenticationException {		
+		this.username = username;
+		this.password = password;
+		this.accountType = accountType;		
+		HashMap<String,String> tokenPairs = getAuthTokens(username, password, serviceName, applicationName, accountType);
+		setAuthTokens(tokenPairs);
 	}
 
 	/**
@@ -132,24 +194,29 @@ public class TokenFactory {
 		this.authToken = new UserToken(token);
 	}
 	
+	public void setAuthTokens(HashMap<String,String> tokens) {
+		this.authToken = new UserToken(tokens);
+	}
+	
 	public UserToken getAuthToken() {
 	    return this.authToken;
 	}
-
-	public String getAuthToken(String username,
+	
+	public HashMap<String, String> getAuthTokens(String username,
 			String password,
 			String serviceName,
-			String applicationName)
-	throws AuthenticationException {		
+			String applicationName,
+			ClientLoginAccountType accountType)
+	throws AuthenticationException {
 
 		String postOutput = "";
 		try {
 			ArrayList<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>();						
-			params.add(new BasicNameValuePair("Email", this.username));
-			params.add(new BasicNameValuePair("Passwd", this.password));
-			params.add(new BasicNameValuePair("source", this.applicationName));
-			params.add(new BasicNameValuePair("service", this.serviceName));
-			params.add(new BasicNameValuePair("accountType", "HOSTED_OR_GOOGLE"));
+			params.add(new BasicNameValuePair("Email", username));
+			params.add(new BasicNameValuePair("Passwd", password));
+			params.add(new BasicNameValuePair("source", applicationName));
+			params.add(new BasicNameValuePair("service", serviceName));
+			params.add(new BasicNameValuePair("accountType", accountType.getValue()));
 			// Open connection
 			UrlEncodedFormEntity entity = new UrlEncodedFormEntity(params);	
 
@@ -169,15 +236,50 @@ public class TokenFactory {
 			ae.initCause(e);
 			throw ae;
 		}
-
-		// Parse the output
-		Map<String, String> tokenPairs =
-			StringUtil.string2Map(postOutput.trim(), "\n", "=", true);
+		
+		HashMap<String,String> tokenPairs = StringUtil.string2Map(postOutput.trim(), "\n", "=", true);
 		String token = tokenPairs.get("Auth");
 		if (token == null) {
 			throw getAuthException(tokenPairs);
 		}
-		return token;
+
+		return tokenPairs;
+	}
+
+	public String getAuthToken(String username,
+			String password,
+			String serviceName,
+			String applicationName,
+			ClientLoginAccountType accountType)
+	throws AuthenticationException {		
+
+		HashMap<String,String> tokenPairs = getAuthTokens(username, password, serviceName, applicationName, accountType);
+		return tokenPairs.get("Auth");
+	}
+	
+	public void setAccountType(ClientLoginAccountType at){
+		this.accountType = at;
+	}
+	
+	public ClientLoginAccountType getAccountType(){
+		return accountType;
+	}
+	
+	public void setUsername(String name){
+		this.username = name;
+	}
+	
+	public String getUserName(){
+		return this.username;
+	}
+	
+	public String getUserDomain(){
+		String res = "";	
+		if (username != null){
+			int i = username.indexOf("@");
+			if (i>=0) res = username.substring(i+1);				
+		}
+		return res;
 	}
 	
 	protected String makePostRequest(URI url, Header[] headers, HttpEntity entity)
@@ -252,7 +354,7 @@ public class TokenFactory {
 	throws SessionExpiredException, AuthenticationException {
 
 		if (username != null && password != null) {
-			String token = getAuthToken(username, password, serviceName, applicationName);
+			String token = getAuthToken(username, password, serviceName, applicationName, accountType);
 			setAuthToken(token);
 		} else {
 			throw sessionExpired;

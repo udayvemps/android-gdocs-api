@@ -66,6 +66,10 @@ public class GDataRequest {
 		public void setAuthToken(TokenFactory.UserToken authToken) {
 			this.authToken = authToken;
 		}
+		
+		public TokenFactory.UserToken getAuthToken() {
+			return this.authToken;
+		}
 
 		public void useSsl() {
 			this.useSsl = true;
@@ -98,6 +102,22 @@ public class GDataRequest {
 						requestUrl.toString().replaceFirst("http", "https"));
 			}
 			return new GDataRequest(type, requestUrl, contentType, authToken, headerMap, privateHeaderMap);
+		}
+		
+		@SuppressWarnings("unused")
+		public GDataRequest getRequest(URL requestUrl)
+		throws IOException {
+			return getRequest(requestUrl, false);
+		}
+		
+		@SuppressWarnings("unused")
+		public GDataRequest getRequest(URL requestUrl, boolean isHosted)
+		throws IOException {
+			if ((this.useSsl || isHosted) && !requestUrl.getProtocol().startsWith("https")) {
+				requestUrl = new URL(
+						requestUrl.toString().replaceFirst("http", "https"));
+			}
+			return new GDataRequest(requestUrl, authToken);
 		}
 
 	}
@@ -279,9 +299,10 @@ public class GDataRequest {
 	 */
 	protected void checkResponse() throws IOException, ServiceException {
 
-		if (httpConn.getResponseCode() >= 300) {
+		int code = httpConn.getResponseCode();
+		if (code >= 300 || code < 0) {
 			handleErrorResponse();
-		}
+		}		
 	}
 
 	/**
@@ -485,6 +506,21 @@ public class GDataRequest {
 		
 		
 	}
+	
+	protected GDataRequest(URL requestUrl, UserToken authToken)
+		throws IOException {		
+		
+		hasOutput = true;
+		this.requestUrl = requestUrl;
+		
+		httpConn = getRequestConnection(requestUrl);
+		
+		setHeader("Accept", "*/*");
+		setHeader("Accept-Encoding", "gzip");
+			
+		httpConn.setDoOutput(expectsInput);
+	}
+		
 
 
 }

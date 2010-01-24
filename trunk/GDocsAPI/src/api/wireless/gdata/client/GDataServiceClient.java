@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,13 +34,14 @@ import api.wireless.gdata.parser.ParseException;
 import api.wireless.gdata.serializer.GDataSerializer;
 import api.wireless.gdata.util.ContentType;
 import api.wireless.gdata.util.ServiceException;
+import api.wireless.gdata.util.common.base.StreamUtil;
 import api.wireless.gdata.util.common.base.StringUtil;
 
 /**
  * Abstract base class for service-specific clients to access GData feeds.
  */
 public abstract class GDataServiceClient {
-
+	
 	protected final String URL_FEED = "/feeds";
 	protected final String URL_DOWNLOAD = "/download";
 	protected final String URL_DOCLIST_FEED = "/private/full";
@@ -59,10 +61,11 @@ public abstract class GDataServiceClient {
 	protected final String URL_CATEGORY_EXPORT = "/Export";
 
 	protected final String PARAMETER_SHOW_FOLDERS = "showfolders=true";
-
+	
+	protected static final int FEED_COLLECTION_SIZE = 100;		
 
 	private final ServiceDataClient gDataClient;
-	private final GDataParserFactory gDataParserFactory;
+	private final GDataParserFactory gDataParserFactory;	
 
 	public GDataServiceClient(ServiceDataClient gDataClient,
 			GDataParserFactory gDataParserFactory) {
@@ -108,7 +111,7 @@ public abstract class GDataServiceClient {
 	 * the GData service.
 	 * @throws HttpException Thrown if the http response contains a result other than 2xx
 	 */
-	public GDataParser getParserForFeed(Class feedEntryClass, URL feedUrl, String eTag)
+	public <E extends Entry> GDataParser<E> getParserForFeed(Class<E> feedEntryClass, URL feedUrl, String eTag)
 	throws ParseException, IOException, ServiceException {
 		InputStream is = gDataClient.getFeedAsStream(feedUrl, eTag);
 		return gDataParserFactory.createParser(feedEntryClass, is);
@@ -125,34 +128,60 @@ public abstract class GDataServiceClient {
 	 * @throws ParseException if the response from the server could not be
 	 *         parsed
 	 */
-	public GDataParser getParserForTypedFeed(Class feedEntryClass, URL feedUri) 
+	public <E extends Entry> GDataParser<E> getParserForTypedFeed(Class<E> feedEntryClass, URL feedUri) 
 	throws ServiceException, IOException, ParseException {
 
 		InputStream is = gDataClient.getFeedAsStream(feedUri, (String) null);	
 		return gDataParserFactory.createParser(feedEntryClass, is);
 	}
+	
+	public <E extends Entry> Feed<E> getFeed(Class<E> entryClass, URL feedUrl, int max_feed_size) 
+		throws ServiceException, IOException, ParseException {
+		
+		Feed<E> feed = getFeed(entryClass, feedUrl);
+		
+		String nextURL = feed.getNext();
+		int total_feed_size = feed.getEntries().size();
+		while (total_feed_size < max_feed_size){
+			// Get next portion
+			Feed<E> nextFeed = getFeed(entryClass, new URL(nextURL));
+			if (nextFeed.getEntries().size() == 0) break;
+			// Add entries to main feed
+			feed.getEntries().addAll(nextFeed.getEntries());
+			// calculate size
+			total_feed_size = feed.getEntries().size();
+			// set new url
+			nextURL = nextFeed.getNext();
+		}
+		
+		return feed;
+	}
+	
+	public <E extends Entry> Feed<E> getFeed(Class<E> entryClass, URL feedUrl) 
+		throws ServiceException, IOException, ParseException {
 
-	public <T extends Entry> Collection<T> getFeed(Class<T> entryClass, URL feedUrl) 
-	throws ServiceException, IOException, ParseException {
-
-		ArrayList<T> entries = new ArrayList<T>();
-		GDataParser parser = null;
-
+		LinkedList<E> entries = new LinkedList<E>();
+		GDataParser<E> parser = null;
+		Feed<E> feed = new Feed<E>();
+		
 		try{
 			parser = getParserForTypedFeed(entryClass, feedUrl);
 
-			Feed feed = parser.init();
+			feed = parser.init();
 			// go thru the entries and pick information
 			boolean nextEntry = true;
 			while(nextEntry)
 			{
-				T entry = null;
-				entry = (T) parser.readNextEntry(entry);
+				E entry = null;
+				entry = parser.readNextEntry(entry);
 				if (entry != null) 
 					entries.add(entry);
 				else
 					nextEntry = false;
-			}
+			}									
+			
+			feed.setEntries(entries);
+			
 		}
 		finally{
 			if (parser != null){				
@@ -161,8 +190,9 @@ public abstract class GDataServiceClient {
 			}
 		}
 
-		return entries;
+		return feed;
 	}	
+
 
 	/**
 	 * Creates a new entry at the provided feed.  Parses the server response
@@ -195,7 +225,7 @@ public abstract class GDataServiceClient {
 	 * the GData service.
 	 * @return The entry returned by the server
 	 */
-	public Entry getEntry(Class entryClass, URL url, String eTag)
+	public <E extends Entry> E getEntry(Class<E> entryClass, URL url, String eTag)
 	throws ParseException, IOException, ServiceException {
 		InputStream is = gDataClient.getFeedAsStream(url, eTag);                  
 		return parseEntry(entryClass, is);
@@ -214,6 +244,16 @@ public abstract class GDataServiceClient {
 	public InputStream getMediaEntry(URL mediaEntryUrl, String eTag, ContentType ct)
 	throws IOException, ServiceException {
 		return gDataClient.getMediaEntryAsStream(mediaEntryUrl, eTag, ct);
+	}
+	
+	public InputStream getMediaEntry(URL mediaEntryUrl)
+	throws IOException, ServiceException {
+		return gDataClient.getMediaEntryAsStream(mediaEntryUrl, false);
+	}
+	
+	public InputStream getMediaEntry(URL mediaEntryUrl, boolean isHosted)
+	throws IOException, ServiceException {
+		return gDataClient.getMediaEntryAsStream(mediaEntryUrl, isHosted);
 	}
 
 	/**
@@ -281,9 +321,9 @@ public abstract class GDataServiceClient {
 		gDataClient.deleteEntry(editUri, eTag);
 	}
 
-	protected Entry parseEntry(Class entryClass, InputStream is) 
+	protected <E extends Entry> E parseEntry(Class<E> entryClass, InputStream is) 
 	throws ParseException, IOException {
-		GDataParser parser = null;
+		GDataParser<E> parser = null;
 		try {
 			parser = gDataParserFactory.createParser(entryClass, is);
 			return parser.parseStandaloneEntry();
@@ -403,7 +443,7 @@ public abstract class GDataServiceClient {
 
 		return new URL(url.toString());
 	}
-
+	
 	/**
 	 * Builds a URL with parameters.
 	 *
@@ -420,19 +460,51 @@ public abstract class GDataServiceClient {
 		if (path == null) {
 			throw new ServiceException("null path");
 		}
-
+	
 		StringBuffer url = new StringBuffer();
 		url.append(gDataClient.protocol + "://" + domain + URL_FEED + path);
-
+	
 		if (parameters != null && parameters.size() > 0) {
 			Set<Map.Entry<String, String>> params = parameters.entrySet();
 			Iterator<Map.Entry<String, String>> itr = params.iterator();
-
+	
 			url.append("?");
 			while (itr.hasNext()) {
 				Map.Entry<String, String> entry = itr.next();
 				url.append(entry.getKey() + "=" + entry.getValue());
 				if (itr.hasNext()) {
+					url.append("&");
+				}
+			}
+		}
+	
+		return new URL(url.toString());
+	}
+
+	/**
+	 * Builds a URL with parameters.
+	 *
+	 * @param domain the domain of the server
+	 * @param path the path to add to the protocol/host
+	 * @param parameters parameters to be added to the URL.
+	 *
+	 * @throws MalformedURLException
+	 * @throws DocumentListException
+	 */
+	public URL buildAnyUrl(String domain, String path, String[] parameters)
+	throws MalformedURLException, ServiceException {
+		if (path == null) {
+			throw new ServiceException("null path");
+		}
+
+		StringBuffer url = new StringBuffer();
+		url.append(gDataClient.protocol + "://" + domain +  path);
+
+		if (parameters != null && parameters.length > 0) {
+			url.append("?");
+			for (int i = 0; i < parameters.length; i++) {
+				url.append(parameters[i]);
+				if (i != (parameters.length - 1)) {
 					url.append("&");
 				}
 			}

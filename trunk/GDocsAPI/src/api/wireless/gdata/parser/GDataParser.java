@@ -26,7 +26,7 @@ import api.wireless.gdata.data.Feed;
  * entries are not read or parsed until {@link #readNextEntry}
  * is called.
  */
-public interface GDataParser {
+public interface GDataParser<E extends Entry> {
 
     /**
      * Starts parsing the feed, returning a {@link Feed} containing information
@@ -37,7 +37,7 @@ public interface GDataParser {
      * @throws ParseException Thrown if the feed cannot be parsed.
      */
     // TODO: rename to parseFeed?  need to make the API clear.
-    Feed init() throws ParseException;
+    Feed<E> init() throws ParseException;
 
     /**
      * Parses a GData entry.  You can either call {@link #init()} or
@@ -46,7 +46,7 @@ public interface GDataParser {
      * @return The parsed entry.
      * @throws ParseException Thrown if the entry could not be parsed.
      */
-    Entry parseStandaloneEntry() throws ParseException, IOException;
+    E parseStandaloneEntry() throws ParseException, IOException;
 
     /**
      * Returns whether or not there is more data in the feed.
@@ -69,7 +69,7 @@ public interface GDataParser {
      * feed being parsed).
      * @throws ParseException Thrown if the entry cannot be parsed.
      */
-    Entry readNextEntry(Entry entry) throws ParseException, IOException;
+    E readNextEntry(E entry) throws ParseException, IOException;
 
     /**
      * Cleans up any state in the parser.  Should be called when caller is

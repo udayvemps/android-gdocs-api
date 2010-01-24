@@ -15,51 +15,53 @@
  ******************************************************************************/
 package api.wireless.gdata.data;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Class containing information about a GData feed.  Note that this feed does
  * not contain any of the entries in that feed -- the entries are yielded
  * separately from this Feed.
  */
-// TODO: add a createEntry method?
-// TODO: comment that setters are only used for parsing code.
-public class Feed {
-    private int totalResults;
+public class Feed<E extends Entry> {
     private int startIndex;
-    private int itemsPerPage;
     private String title;
     private String id;
     private String lastUpdated;
     private String category;
     private String categoryScheme;
+    private String next;
+    private String eTag;
+    
+    /**
+     * Class used to construct new entry instance, initialized at construction.
+     */
+    protected Class<? extends E> entryClass;
+
+    /** Feed entries. */
+    protected List<E> entries = new LinkedList<E>();
 
     /**
      * Creates a new, empty feed.
      */
     public Feed() {
+    }   
+
+    
+    /** Returns the list of entries in this feed */
+    public List<E> getEntries() {
+      return entries;
     }
 
-    public int getTotalResults() {
-        return totalResults;
-    }
-
-    public void setTotalResults(int totalResults) {
-        this.totalResults = totalResults;
-    }
-
+    /** Sets the list to use for storing the entry list */
+    public void setEntries(List<E> entryList) { this.entries = entryList; }
+    
     public int getStartIndex() {
         return startIndex;
     }
 
     public void setStartIndex(int startIndex) {
         this.startIndex = startIndex;
-    }
-
-    public int getItemsPerPage() {
-        return itemsPerPage;
-    }
-
-    public void setItemsPerPage(int itemsPerPage) {
-        this.itemsPerPage = itemsPerPage;
     }
 
     /**
@@ -130,6 +132,35 @@ public class Feed {
      */
     public void setTitle(String title) {
         this.title = title;
+    }
+    
+    /** 
+     * @return feed link to rest of the documents
+     */
+    public String getNext(){
+    	return next;
+    }
+    
+    /** 
+     * @return set next feed link
+     */
+    public void setNext(String next){
+    	this.next = next;
+    }
+    
+    /** 
+     * @return Feed etag
+     */
+    public String getEtag(){
+    	return eTag;
+    }
+    
+    /**
+     * Set feed etag
+     * @param eTag
+     */
+    public void setEtag(String eTag){
+    	this.eTag = eTag;
     }
 
 }

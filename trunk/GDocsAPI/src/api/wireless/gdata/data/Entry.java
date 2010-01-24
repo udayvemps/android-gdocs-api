@@ -43,6 +43,7 @@ public class Entry {
     private boolean deleted = false;
     private boolean starred = false;
     private String label = null;
+    private String mime = null;
     
     /**
      * Creates a new empty entry.
@@ -94,6 +95,7 @@ public class Entry {
         deleted = false;
         starred = false;
         label = null;
+        mime = null;
     }
     
     public String getEtag() { return etag; }
@@ -379,6 +381,20 @@ public class Entry {
      */
     public void setEmail(String email) {
         this.email = email;
+    }
+    
+    /**
+     * @return the mime type of document
+     */
+    public String getMime() {
+        return mime;
+    }
+
+    /**
+     * @param the mime type to set
+     */
+    public void setMime(String mime) {
+        this.mime = mime;
     }
 
     public void validate() throws ParseException {

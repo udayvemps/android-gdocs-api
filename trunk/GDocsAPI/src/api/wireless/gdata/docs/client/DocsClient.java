@@ -23,13 +23,17 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import android.util.Log;
 import api.wireless.gdata.client.GDataParserFactory;
 import api.wireless.gdata.client.GDataServiceClient;
+import api.wireless.gdata.client.TokenFactory.ClientLoginAccountType;
 import api.wireless.gdata.client.http.GDataRequest;
 import api.wireless.gdata.client.http.GDataRequest.RequestType;
 import api.wireless.gdata.data.Entry;
+import api.wireless.gdata.data.Feed;
 import api.wireless.gdata.docs.data.DocumentEntry;
 import api.wireless.gdata.docs.data.DocumentListEntry;
 import api.wireless.gdata.docs.data.FolderEntry;
@@ -44,13 +48,18 @@ import api.wireless.gdata.util.common.base.StringUtil;
 public class DocsClient extends GDataServiceClient {
 	private static final String TAG = "DocsClient";
 	
+	public static final String ALL = "all";
 	public static final String DOCS = "documents";
 	public static final String PRESENTATIONS = "presentations";
 	public static final String SPREADSHEETS = "spreadsheets";
 	public static final String PDFS = "pdfs";
+	public static final String STARRED = "starred";
+	public static final String TRASHED = "trashed";	
 	
 	/** The name of the service by the protocol. */
-	private static final String SERVICE = "writely";		
+	private static final String SERVICE = "writely";
+	
+	private int feedCollectionSize = FEED_COLLECTION_SIZE;
 	
 	public DocsClient(DocsGDataClient client, GDataParserFactory docsParserFactory) {
 		super(client, docsParserFactory);		
@@ -62,8 +71,16 @@ public class DocsClient extends GDataServiceClient {
 		return SERVICE;
 	}
 	
+	public void setFeedCollectionSize(int size) {
+		feedCollectionSize = size;
+	}
+	
 	public void setUserCredentials(String user, String pass) throws AuthenticationException{
 		getGDataClient().setUserCredentials(user, pass);	
+	}
+	
+	public void setUserCredentials(String user, String pass, ClientLoginAccountType accountType) throws AuthenticationException{
+		getGDataClient().setUserCredentials(user, pass, accountType);	
 	}
 	
 	public void IsAuthTokenValid() throws AuthenticationException{
@@ -88,6 +105,14 @@ public class DocsClient extends GDataServiceClient {
 		getGDataClient().setUserToken(token);
 	}	
 
+	public HashMap<String,String> getTokens(){
+		return getGDataClient().getTokenFactory().getAuthToken().getValues();
+	}
+	
+	public void setTokens(HashMap<String,String> tokens){
+		getGDataClient().setUserToken(tokens);
+	}	
+	
 	public FolderEntry getFolderByTitle(String title) 
 		throws ServiceException, IOException, ParseException {
 		String[] parameters = null;
@@ -99,18 +124,20 @@ public class DocsClient extends GDataServiceClient {
 		URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED, parameters);
 		FolderEntry fld = null;
 	
-		ArrayList<FolderEntry> flds = (ArrayList<FolderEntry>) getFeed(FolderEntry.class, url);
-		if (flds.size() > 0)
-			fld = flds.get(0);
+		Feed<FolderEntry> flds = getFeed(FolderEntry.class, url);
+		if (flds.getEntries().size() > 0)
+			fld = flds.getEntries().get(0);
 	
 		return fld;
 	}
 
-	public ArrayList<FolderEntry> getFolders() 
+	public List<FolderEntry> getFolders() 
 		throws ParseException, ServiceException, IOException{
 	    URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + URL_CATEGORY_FOLDER);		
-		return (ArrayList<FolderEntry>) getFeed(FolderEntry.class, url);		
+		return getFeed(FolderEntry.class, url).getEntries();		
 	}
+	
+	
 
 	/**
 	 * Gets a feed containing the documents.
@@ -128,7 +155,7 @@ public class DocsClient extends GDataServiceClient {
 	 * @throws ServiceException
 	 * @throws ParseException 
 	 */
-	public ArrayList<DocumentEntry> getListOf(String category) 
+	public Feed<DocumentEntry> getFeedOf(String category) 
 		throws IOException, ServiceException, ParseException {
 		if (category == null) {
 			throw new ParseException("null category");
@@ -136,27 +163,49 @@ public class DocsClient extends GDataServiceClient {
 	
 		URL url;
 	
-	    if (category.equals("all")) {
+	    if (category.equals(ALL)) {
 	        url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED);
-	    } else if (category.equals("documents")) {
+	    } else if (category.equals(DOCS)) {
 			url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + URL_CATEGORY_DOCUMENT);
-		} else if (category.equals("spreadsheets")) {
+		} else if (category.equals(SPREADSHEETS)) {
 			url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + URL_CATEGORY_SPREADSHEET);
-		} else if (category.equals("pdfs")) {
+		} else if (category.equals(PDFS)) {
 			url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + URL_CATEGORY_PDF);
-		} else if (category.equals("presentations")) {
+		} else if (category.equals(PRESENTATIONS)) {
 			url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + URL_CATEGORY_PRESENTATION);
-		} else if (category.equals("starred")) {
+		} else if (category.equals(STARRED)) {
 			url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + URL_CATEGORY_STARRED);
-		} else if (category.equals("trashed")) {
+		} else if (category.equals(TRASHED)) {
 			url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + URL_CATEGORY_TRASHED);
 		} else {
 			return null;
 		}
 	
-		return (ArrayList<DocumentEntry>) getFeed(DocumentEntry.class, url);	    
+		return getFeed(DocumentEntry.class, url, feedCollectionSize);	    
 	}
 	
+	/**
+	 * Gets the feed for all the objects contained in a folder.
+	 *
+	 * @param folderResourceId the resource id of the folder to return the feed
+	 *        for the contents.
+	 *
+	 * @throws IOException
+	 * @throws MalformedURLException
+	 * @throws ServiceException
+	 * @throws DocumentListException
+	 */
+	public Feed<DocumentEntry> getFolderDocsListFeed(String folderResourceId) 
+		throws IOException, ServiceException, ParseException {
+		
+		if (folderResourceId == null) {
+			throw new ParseException("null folderResourceId");
+		}
+
+		URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED + "/" + folderResourceId + URL_FOLDERS);
+		return getFeed(DocumentEntry.class, url, feedCollectionSize);
+	}
+
 	public DocumentEntry getDocumentByTitle(String title) 
 		throws ServiceException, IOException, ParseException {
 		String[] parameters = null;
@@ -168,14 +217,14 @@ public class DocsClient extends GDataServiceClient {
 		URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED, parameters);
 		DocumentEntry doc = null;
 		
-		ArrayList<DocumentEntry> docs = (ArrayList<DocumentEntry>) getFeed(DocumentEntry.class, url);
-		if (docs.size() > 0)
-			doc = docs.get(0);
+		Feed<DocumentEntry> docs = getFeed(DocumentEntry.class, url);
+		if (docs.getEntries().size() > 0)
+			doc = docs.getEntries().get(0);
 		
 		return doc;
 	}
 	
-	/**
+	  /**
 	 * Creates a new entry with media at the provided feed.  Parses the server response
 	 * into the version of the entry stored on the server.
 	 * 
@@ -397,6 +446,30 @@ public class DocsClient extends GDataServiceClient {
 		URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED, parameters);
 				
 		return (DocumentEntry) createEntry(url, doc, inputStream, contentType);
+	}
+	
+	public InputStream GViewDocument(String resourceId, int page, int res)
+		throws IOException, ServiceException, ParseException {		
+	
+		String[] parameters = {
+				"pid=explorer", 
+				"a=bi", 
+				String.format("pagenumber=%d", page),
+				String.format("w=%d", res),
+				String.format("srcid=%s",getResourceIdSuffix(resourceId)),
+				};        	    
+		
+		// Hosted
+		boolean isHosted = getGDataClient().getTokenFactory().getAccountType().compareTo(ClientLoginAccountType.HOSTED_OR_GOOGLE) == 0;
+		String udomain = "";
+		if (isHosted){
+			udomain = getGDataClient().getTokenFactory().getUserDomain();
+			if (udomain.length()>0) udomain = "/a/"+udomain;
+		}
+		
+		URL url = buildAnyUrl(DocsGDataClient.DEFAULT_HOST + udomain, "/gview", parameters);
+			
+		return getMediaEntry(url, isHosted);
 	}
 		
 }
