@@ -21,8 +21,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.HashMap;
 
 import android.util.Log;
+import api.wireless.gdata.client.TokenFactory.ClientLoginAccountType;
+import api.wireless.gdata.client.TokenFactory.UserToken;
 import api.wireless.gdata.client.http.GDataRequest;
 import api.wireless.gdata.client.http.GDataRequest.GDataRequestFactory;
 import api.wireless.gdata.client.http.GDataRequest.RequestType;
@@ -134,7 +137,33 @@ public class ServiceDataClient extends Service implements GDataClient {
 
 		return feedStream;
 	}
+	
+	public InputStream getMediaEntryAsStream(URL mediaEntryUrl, boolean isHosted)
+	throws ServiceException, IOException {
+		InputStream feedStream = null;
+		GDataRequest request = requestFactory.getRequest(mediaEntryUrl, isHosted);
+				
+		String cookie;
+		if (isHosted)
+			cookie = String.format("WRITELYHS=%s=%s; SID=%s",
+					getTokenFactory().getUserDomain(),
+					requestFactory.getAuthToken().getValue(UserToken.AUTH), 
+					requestFactory.getAuthToken().getValue(UserToken.SID));
+		else
+			cookie = String.format("WRITELY_SID=%s; SID=%s", 
+					requestFactory.getAuthToken().getValue(UserToken.AUTH), 
+					requestFactory.getAuthToken().getValue(UserToken.SID));
+		request.setHeader("Cookie", cookie);
+		
+		
+		request.execute();
+		feedStream = request.getResponseStream();			
 
+		return feedStream;
+	}
+
+	
+	
 	public InputStream updateEntry(URL editUri, String etag,
 			GDataSerializer entry) throws ServiceException, IOException {
 		
@@ -186,8 +215,14 @@ public class ServiceDataClient extends Service implements GDataClient {
 	}
 	
 	public void createTokenFactory(String serviceName) {
-		authTokenFactory = new TokenFactory(serviceName, applicationName);		
+		authTokenFactory = new TokenFactory(serviceName, applicationName);
 	}
+	
+	public void createTokenFactory(String serviceName, ClientLoginAccountType accountType) {
+		authTokenFactory = new TokenFactory(serviceName, applicationName);
+		authTokenFactory.setAccountType(accountType);
+	}
+	
 	
 	public TokenFactory getTokenFactory(){
 		return authTokenFactory;
@@ -198,8 +233,18 @@ public class ServiceDataClient extends Service implements GDataClient {
 		requestFactory.setAuthToken(authTokenFactory.getAuthToken());
 	}
 	
+	public void setUserCredentials(String user, String pass, ClientLoginAccountType accountType) throws AuthenticationException {
+		authTokenFactory.setUserCredentials(user, pass, accountType);		
+		requestFactory.setAuthToken(authTokenFactory.getAuthToken());
+	}
+	
 	public void setUserToken(String token){
 		authTokenFactory.setAuthToken(token);		
+		requestFactory.setAuthToken(authTokenFactory.getAuthToken());
+	}
+	
+	public void setUserToken(HashMap<String,String> tokens){
+		authTokenFactory.setAuthTokens(tokens);		
 		requestFactory.setAuthToken(authTokenFactory.getAuthToken());
 	}
 

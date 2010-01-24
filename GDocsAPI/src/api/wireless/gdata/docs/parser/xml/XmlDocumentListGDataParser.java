@@ -76,7 +76,7 @@ public class XmlDocumentListGDataParser extends XmlGDataParser  {
 				&& "application/atom+xml".equals(type)) {
 			DocumentListEntry doc = (DocumentListEntry) entry;
 			doc.setParent(DocumentListEntry.getKeyfromID(href));
-		}
+		}		
 	}
 
 }

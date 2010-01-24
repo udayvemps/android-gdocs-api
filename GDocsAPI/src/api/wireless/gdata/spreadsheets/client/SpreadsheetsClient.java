@@ -15,10 +15,12 @@
  ******************************************************************************/
 package api.wireless.gdata.spreadsheets.client;
 
+import android.net.Uri;
 import api.wireless.gdata.client.GDataParserFactory;
 import api.wireless.gdata.client.GDataServiceClient;
 import api.wireless.gdata.client.HttpException;
 import api.wireless.gdata.client.ServiceDataClient;
+import api.wireless.gdata.client.TokenFactory.ClientLoginAccountType;
 import api.wireless.gdata.client.http.GDataRequest;
 import api.wireless.gdata.data.Entry;
 import api.wireless.gdata.parser.GDataParser;
@@ -55,6 +57,8 @@ public class SpreadsheetsClient extends GDataServiceClient {
     /** The name of the service, dictated to be 'wise' by the protocol. */
     private static final String SERVICE = "wise";
 
+	private static final String URL_SPREADSHEETS = "/spreadsheets";
+
     /**
      * Create a new SpreadsheetsClient.
      *
@@ -79,11 +83,15 @@ public class SpreadsheetsClient extends GDataServiceClient {
 	public void setUserCredentials(String user, String pass) throws AuthenticationException{
 		getGDataClient().setUserCredentials(user, pass);	
 	}
+	
+	public void setUserCredentials(String user, String pass, ClientLoginAccountType accountType) throws AuthenticationException{
+		getGDataClient().setUserCredentials(user, pass, accountType);	
+	}
 		
 	public void IsAuthTokenValid() throws AuthenticationException{
 		try {			
 			
-			URL url = buildUrl(SPREADSHEETS_HOST, URL_DOCLIST_FEED+URL_CATEGORY_SPREADSHEET, (String[])null);
+			URL url = buildUrl(SPREADSHEETS_HOST, URL_SPREADSHEETS+URL_DOCLIST_FEED, (String[])null);
 			//new URL("http://spreadsheets.google.com/feeds/spreadsheets/private/full");
 			GDataRequest request = getGDataClient().createFeedRequest(url);			
 			request.execute();
@@ -204,14 +212,14 @@ public class SpreadsheetsClient extends GDataServiceClient {
 	    
 	    HashMap<String, String> parameters = new HashMap<String, String>();	    
 	    parameters.put("exportFormat", ContentType.getFileExtension(ct));
-	    parameters.put("key", resourceId);
+	    parameters.put("key", Uri.encode(resourceId));
 
 	    // If exporting to .csv or .tsv, add the gid parameter to specify which sheet to export
 	    if (ct.equals(ContentType.CSV) || ct.equals(ContentType.TSV)) {
 	      parameters.put("gid", "0"); // download only the first sheet
 	    }
 
-	    URL url = buildUrl(SPREADSHEETS_HOST, URL_DOWNLOAD + "/spreadsheets" + URL_CATEGORY_EXPORT, parameters);
+	    URL url = buildUrl(SPREADSHEETS_HOST, URL_DOWNLOAD + URL_SPREADSHEETS + URL_CATEGORY_EXPORT, parameters);
 	    
 	    return ((SpreadsheetGDataClient)getGDataClient()).getMediaEntryAsStream(url, ct);
 	}

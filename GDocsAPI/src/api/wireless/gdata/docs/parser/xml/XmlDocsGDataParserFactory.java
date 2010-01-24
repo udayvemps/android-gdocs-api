@@ -52,7 +52,7 @@ public class XmlDocsGDataParserFactory implements GDataParserFactory{
 	}
 
 	@SuppressWarnings("unchecked")
-	public GDataParser createParser(Class entryClass, InputStream is)
+	public <E extends Entry> GDataParser<E> createParser(Class<E> entryClass, InputStream is)
 	throws ParseException {
 		try {
 			XmlPullParser xmlParser = xmlFactory.createParser();
@@ -70,11 +70,11 @@ public class XmlDocsGDataParserFactory implements GDataParserFactory{
 		}
 	}
 
-	public GDataParser createParser(InputStream is) throws ParseException {
+	public GDataParser<DocumentListEntry> createParser(InputStream is) throws ParseException {
 		return createParser(DocumentListEntry.class, is);
 	}
 
-	public GDataSerializer createSerializer(Entry entry) {
+	public  <E extends Entry> GDataSerializer createSerializer(E entry) {
 		if (entry instanceof DocumentEntry) {
 			DocumentEntry docEntry = (DocumentEntry) entry;
 			return new XmlDocumentEntryGDataSerializer(xmlFactory, docEntry);

@@ -67,6 +67,11 @@ public class DocumentEntry extends DocumentListEntry{
 		setLabel(XmlGDataParser.PRS_LABEL);
 		setCategory(TERM+getLabel());
 	}
+	
+	public void setFile(){
+		setLabel(XmlGDataParser.FILE_LABEL);
+		setCategory(TERM+getLabel());
+	}
 
 
 }

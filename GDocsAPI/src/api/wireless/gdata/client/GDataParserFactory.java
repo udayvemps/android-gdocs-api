@@ -38,7 +38,7 @@ public interface GDataParserFactory {
    * @throws ParseException Thrown if the GDataParser could not be created.
    * @throws IllegalArgumentException if the feed type is unknown.
    */
-  GDataParser createParser(Class entryClass, InputStream is)
+  <E extends Entry> GDataParser<E> createParser(Class<E> entryClass, InputStream is)
       throws ParseException;
 
   /**
@@ -52,7 +52,7 @@ public interface GDataParserFactory {
    *         the default type assumed by this method.
    * @see #createParser(Class,InputStream)
    */
-  GDataParser createParser(InputStream is) throws ParseException;
+  <E extends Entry> GDataParser<E> createParser(InputStream is) throws ParseException;
 
   /**
    * Creates a new {@link GDataSerializer} for the provided Entry.
@@ -60,5 +60,5 @@ public interface GDataParserFactory {
    * @param entry The Entry that should be serialized.
    * @return The GDataSerializer that will serialize entry.
    */
-  GDataSerializer createSerializer(Entry entry);
+  <E extends Entry> GDataSerializer createSerializer(E entry);
 }
