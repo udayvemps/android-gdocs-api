@@ -206,7 +206,7 @@ public class DocsClient extends GDataServiceClient {
 		return getFeed(DocumentEntry.class, url, feedCollectionSize);
 	}
 
-	public DocumentEntry getDocumentByTitle(String title) 
+	public Feed<DocumentEntry> getDocumentsByTitle(String title) 
 		throws ServiceException, IOException, ParseException {
 		String[] parameters = null;
 		try {
@@ -218,13 +218,26 @@ public class DocsClient extends GDataServiceClient {
 		DocumentEntry doc = null;
 		
 		Feed<DocumentEntry> docs = getFeed(DocumentEntry.class, url);
-		if (docs.getEntries().size() > 0)
-			doc = docs.getEntries().get(0);
-		
-		return doc;
+
+		return docs;
 	}
 	
-	  /**
+	public Feed<DocumentEntry> searchDocumentsFullText(String query)
+		throws IOException, ServiceException, ParseException {	
+		String[] parameters = null;
+		try {
+			parameters = new String[] {"q="+URLEncoder.encode(query, "UTF-8")};
+		} catch (UnsupportedEncodingException e) {
+			throw new MalformedURLException("Unable to create parameters");
+		}
+		URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED, parameters);
+		
+		Feed<DocumentEntry> docs = getFeed(DocumentEntry.class, url);
+		
+		return docs; 
+	}
+
+	/**
 	 * Creates a new entry with media at the provided feed.  Parses the server response
 	 * into the version of the entry stored on the server.
 	 * 
@@ -308,7 +321,7 @@ public class DocsClient extends GDataServiceClient {
 	    URL url = new URL(doc.getEditUri()+"?delete=true");
 		deleteEntry(url, doc.getEtag()); // Delete from folder
 	}
-
+	
 	/**
 	 * Create new folder
 	 * @param folderEntry folder entry
