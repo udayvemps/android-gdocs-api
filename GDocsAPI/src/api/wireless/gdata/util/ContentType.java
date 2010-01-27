@@ -495,7 +495,7 @@ public class ContentType implements Serializable {
 	  else if (ct.equals(PPT))
 		  return "ppt";
 	  else 
-		  return null;
+		  return "";
   }
   
   public static ContentType getContentTypeFromExtension(String ext){
@@ -528,7 +528,7 @@ public class ContentType implements Serializable {
 	  else if (ext.equalsIgnoreCase("ppt"))
 		  return PPT;
 	  else 
-		  return null;
+		  return BIN;
   }
 
   /**
