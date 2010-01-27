@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.http.entity.FileEntity;
+
 import android.util.Log;
 import api.wireless.gdata.client.GDataParserFactory;
 import api.wireless.gdata.client.GDataServiceClient;
@@ -256,6 +258,23 @@ public class DocsClient extends GDataServiceClient {
 		InputStream is = ((DocsGDataClient) getGDataClient()).createCompleteEntry(feedUrl, serializer, inputStream, contentType);
 		return parseEntry(entry.getClass(), is);
 	}
+	
+	/**
+	 * 
+	 * @param feedUrl
+	 * @param entry
+	 * @param inputStream
+	 * @param contentType
+	 * @return
+	 * @throws ParseException
+	 * @throws IOException
+	 * @throws ServiceException
+	 */
+	public DocumentEntry createFileEntry(URL feedUrl, String name, InputStream inputStream, String contentType)
+	throws ParseException, IOException, ServiceException {		
+		InputStream is = ((DocsGDataClient) getGDataClient()).createCompleteEntry(feedUrl, name, inputStream, contentType);
+		return parseEntry((new DocumentEntry()).getClass(), is);
+	}
 
 	/**
 	 * Create new document without content
@@ -286,6 +305,23 @@ public class DocsClient extends GDataServiceClient {
 		return (DocumentEntry) createEntry(url, docEntry, inputStream, contentType);
 	}
 	
+	/**
+	 * Uploads file of any type to server (only works for Premier Accounts)
+	 * @param name document name
+	 * @param inputStream data stream
+	 * @param contentType content type
+	 * @return DocumentEntry object representing file
+	 * @throws ParseException
+	 * @throws IOException
+	 * @throws ServiceException
+	 */
+	public DocumentEntry createFileDocument(String name, InputStream inputStream, String contentType) 
+	throws ParseException, IOException, ServiceException {		
+		String[] parameters = new String[] {"convert=false"};
+		URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED,parameters);
+		return (DocumentEntry) createFileEntry(url, name, inputStream, contentType);
+	}
+
 	public DocumentEntry createDocumentInFolder(DocumentEntry docEntry,
 			InputStream inputStream, String contentType, String folderUid)
 	throws ParseException, IOException, ServiceException {		
