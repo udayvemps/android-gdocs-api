@@ -27,6 +27,7 @@ import api.wireless.gdata.spreadsheets.data.SpreadsheetEntry;
 import api.wireless.gdata.spreadsheets.data.WorksheetEntry;
 import api.wireless.gdata.spreadsheets.serializer.xml.XmlCellEntryGDataSerializer;
 import api.wireless.gdata.spreadsheets.serializer.xml.XmlListEntryGDataSerializer;
+import api.wireless.gdata.spreadsheets.serializer.xml.XmlWorksheetEntryGDataSerializer;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -102,6 +103,8 @@ public class XmlSpreadsheetsGDataParserFactory implements GDataParserFactory {
             return new XmlListEntryGDataSerializer(xmlFactory, entry);
         } else if (entry instanceof CellEntry) {
             return new XmlCellEntryGDataSerializer(xmlFactory, entry);
+        } else if (entry instanceof WorksheetEntry) {
+            return new XmlWorksheetEntryGDataSerializer(xmlFactory, entry);
         } else {
             throw new IllegalArgumentException(
                     "Expected a ListEntry or CellEntry");
