@@ -95,8 +95,6 @@ public class DocsClient extends GDataServiceClient {
 		} catch (Exception ex) {
 			// Dump everything else
 		}
-		
-		
 	}
 	
 	public String getToken(){
@@ -105,7 +103,15 @@ public class DocsClient extends GDataServiceClient {
 	
 	public void setToken(String token){
 		getGDataClient().setUserToken(token);
-	}	
+	}
+	
+	public boolean getSSL(){
+		return getGDataClient().getSSL();
+	}
+	
+	public void setSSL(boolean set){
+		getGDataClient().setSSL(set);
+	}
 
 	public HashMap<String,String> getTokens(){
 		return getGDataClient().getTokenFactory().getAuthToken().getValues();
