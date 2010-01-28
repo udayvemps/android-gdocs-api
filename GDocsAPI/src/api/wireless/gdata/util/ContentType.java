@@ -226,7 +226,7 @@ public class ContentType implements Serializable {
 		new ContentType("application/msword");
   
   public static final ContentType XLS =
-		new ContentType("application/msexcel");
+		new ContentType("application/vnd.ms-excel");
 
   public static final ContentType ODT =
 		new ContentType("application/vnd.oasis.opendocument.text");

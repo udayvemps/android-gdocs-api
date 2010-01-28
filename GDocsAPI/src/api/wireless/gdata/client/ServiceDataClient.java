@@ -68,8 +68,12 @@ public class ServiceDataClient extends Service implements GDataClient {
 		requestFactory.setHeader(GDataProtocol.Header.VERSION, SERVICE_VERSION); //       requestVersion.getVersionString()
 	}
 	
-	public void UseSSL(){
-		requestFactory.useSsl();
+	public boolean getSSL(){
+		return requestFactory.getSsl();
+	}
+	
+	public void setSSL(boolean set){
+		requestFactory.setSsl(set);
 	}
 
 	public void close() {

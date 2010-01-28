@@ -71,8 +71,12 @@ public class GDataRequest {
 			return this.authToken;
 		}
 
-		public void useSsl() {
-			this.useSsl = true;
+		public boolean getSsl() {
+			return this.useSsl;
+		}
+		
+		public void setSsl(boolean set) {
+			this.useSsl = set;
 		}
 
 		private void extendHeaderMap(Map<String, String> headerMap,
