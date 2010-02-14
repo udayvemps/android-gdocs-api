@@ -66,11 +66,9 @@ public class XmlWorksheetEntryGDataSerializer extends XmlEntryGDataSerializer {
         WorksheetEntry entry = (WorksheetEntry) getEntry();
         int calCount = entry.getColCount();
         int rowCount = entry.getRowCount();
-        String title = entry.getTitle();
  
         addRowCountTag(serializer, rowCount);
         addColCountTag(serializer, calCount);
-        
     }
 
 	private void addColCountTag(XmlSerializer serializer, int calCount)
