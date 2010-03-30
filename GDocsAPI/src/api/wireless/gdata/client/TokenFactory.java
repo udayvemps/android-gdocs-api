@@ -19,8 +19,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +39,10 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 
+
 import api.wireless.gdata.client.ClientAuthenticationExceptions.SessionExpiredException;
 import api.wireless.gdata.util.AuthenticationException;
+import api.wireless.gdata.util.common.base.CharEscapers;
 import api.wireless.gdata.util.common.base.StringUtil;
 
 
@@ -217,25 +222,34 @@ public class TokenFactory {
 			params.add(new BasicNameValuePair("source", applicationName));
 			params.add(new BasicNameValuePair("service", serviceName));
 			params.add(new BasicNameValuePair("accountType", accountType.getValue()));
-			// Open connection
-			UrlEncodedFormEntity entity = new UrlEncodedFormEntity(params);	
-
+			
+			UrlEncodedFormEntity entity = new UrlEncodedFormEntity(params);
 			ArrayList<BasicHeader> hdrs = new ArrayList<BasicHeader>();
 			hdrs.add(new BasicHeader("Content-type", "application/x-www-form-urlencoded"));
 			
-			URI url = new URI(loginProtocol + "://" + domainName + GOOGLE_LOGIN_PATH);
-			postOutput = makePostRequest(url, headersToArray(hdrs), entity);
+			Map<String, String> mParams = new HashMap<String, String>();
+			mParams.put("Email", username);
+			mParams.put("Passwd", password);
+			mParams.put("source", applicationName);
+			mParams.put("service", serviceName);
+			mParams.put("accountType", accountType.getValue());
+			
+			
+			//URI url = new URI(loginProtocol + "://" + domainName + GOOGLE_LOGIN_PATH);
+			//postOutput = makePostRequest(url, headersToArray(hdrs), entity);			
+			URL url = new URL(loginProtocol + "://" + domainName + GOOGLE_LOGIN_PATH);
+			postOutput = makePostRequest(url, mParams);
 		} catch (IOException e) {
 			AuthenticationException ae =
 				new AuthenticationException("Error connecting with login URI");
 			ae.initCause(e);
 			throw ae;
-		} catch (URISyntaxException e) {
+		}/* catch (URISyntaxException e) {
 			AuthenticationException ae =
 				new AuthenticationException("Wrong authentication URI");
 			ae.initCause(e);
 			throw ae;
-		}
+		}*/
 		
 		HashMap<String,String> tokenPairs = StringUtil.string2Map(postOutput.trim(), "\n", "=", true);
 		String token = tokenPairs.get("Auth");
@@ -317,6 +331,81 @@ public class TokenFactory {
 
 		return outputBuilder.toString();		
 	}	
+	
+	/**
+	 * Makes a HTTP POST request to the provided {@code url} given the
+	 * provided {@code parameters}.  It returns the output from the POST
+	 * handler as a String object.
+	 *
+	 * @param url the URL to post the request
+	 * @param parameters the parameters to post to the handler
+	 * @return the output from the handler
+	 * @throws IOException if an I/O exception occurs while creating, writing,
+	 *                     or reading the request
+	 */
+	public String makePostRequest(URL url, Map<String, String> parameters)
+		throws IOException {
+
+		// Open connection		
+		HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+
+		// Set properties of the connection
+		urlConnection.setDoInput(true);
+		urlConnection.setDoOutput(true);
+		urlConnection.setUseCaches(false);
+		urlConnection.setRequestMethod("POST");
+		urlConnection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
+
+		// Form the POST parameters
+		StringBuilder content = new StringBuilder();
+		boolean first = true;
+		for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+			if (!first) {
+				content.append("&");
+			}
+			content.append(
+					CharEscapers.uriEscaper().escape(parameter.getKey())).append("=");
+			content.append(CharEscapers.uriEscaper().escape(parameter.getValue()));
+			first = false;
+		}
+
+		OutputStream outputStream = null;
+		try {
+			outputStream = urlConnection.getOutputStream();
+			outputStream.write(content.toString().getBytes("utf-8"));
+			outputStream.flush();
+		} finally {
+			if (outputStream != null) {
+				outputStream.close();
+			}
+		}
+
+		// Retrieve the output
+		InputStream inputStream = null;
+		StringBuilder outputBuilder = new StringBuilder();
+		try {
+			int responseCode = urlConnection.getResponseCode();
+			if (responseCode == HttpURLConnection.HTTP_OK) {
+				inputStream = urlConnection.getInputStream();
+			} else {
+				inputStream = urlConnection.getErrorStream();
+			}
+
+			String string;
+			if (inputStream != null) {
+				BufferedReader reader =
+					new BufferedReader(new InputStreamReader(inputStream));
+				while (null != (string = reader.readLine())) {
+					outputBuilder.append(string).append('\n');
+				}
+			}
+		} finally {
+			if (inputStream != null) {
+				inputStream.close();
+			}
+		}
+		return outputBuilder.toString();
+	}
 	
 	protected AuthenticationException getAuthException(Map<String, String> pairs) {
 

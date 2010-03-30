@@ -526,5 +526,14 @@ public class DocsClient extends GDataServiceClient {
 			
 		return getMediaEntry(url, isHosted);
 	}
+	
+	public DocumentEntry publishDocument(DocumentEntry doc, boolean toPublish) 
+	throws ParseException, IOException, ServiceException {
+		if ((doc.getResourceId() != null) || StringUtil.isEmpty(doc.getResourceId())) {
+	        throw new ParseException("No document found.");
+	    }	
+		URL url = buildUrl(URL_DEFAULT + URL_DOCLIST_FEED+"/"+ doc.getResourceId());		
+		return (DocumentEntry) getEntry(DocumentEntry.class, url, null);
+	}
 		
 }
