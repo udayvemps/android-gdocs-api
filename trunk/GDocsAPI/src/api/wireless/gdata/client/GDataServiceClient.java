@@ -142,7 +142,7 @@ public abstract class GDataServiceClient {
 		
 		String nextURL = feed.getNext();
 		int total_feed_size = feed.getEntries().size();
-		while (total_feed_size < max_feed_size){
+		while ((total_feed_size < max_feed_size) && (nextURL != null)){
 			// Get next portion
 			Feed<E> nextFeed = getFeed(entryClass, new URL(nextURL));
 			if (nextFeed.getEntries().size() == 0) break;
