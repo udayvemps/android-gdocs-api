@@ -275,7 +275,7 @@ public abstract class GDataServiceClient {
 		if (StringUtil.isEmpty(editUri)) {
 			throw new ParseException("No edit URI -- cannot update.");
 		}
-
+		
 		GDataSerializer serializer = gDataParserFactory.createSerializer(entry);
 		InputStream is = gDataClient.updateEntry(new URL(editUri), eTag, serializer);
 		return parseEntry(entry.getClass(), is);
