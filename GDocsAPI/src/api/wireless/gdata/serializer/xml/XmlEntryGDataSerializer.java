@@ -142,14 +142,14 @@ public class XmlEntryGDataSerializer implements GDataSerializer {
 				serializeLink(
 						serializer,
 						"http://schemas.google.com/spreadsheets/2006#listfeed" /* rel */,
-						entry.getEditUri(), "application/atom+xml" /* type */);
+						((WorksheetEntry) entry).getListFeedUri(), "application/atom+xml" /* type */);
 				serializeLink(
 						serializer,
 						"http://schemas.google.com/spreadsheets/2006#cellsfeed" /* rel */,
-						entry.getHtmlUri(), "application/atom+xml" /* type */);
-				serializeLink(serializer, "self", entry.getId(),
+						((WorksheetEntry) entry).getCellFeedUri(), "application/atom+xml" /* type */);
+				serializeLink(serializer, "self", entry.getSelfUri(),
 						"application/atom+xml");
-				serializeLink(serializer, "edit", entry.getId() + "/version",
+				serializeLink(serializer, "edit", entry.getEditUri(),
 						"application/atom+xml");
 			} else {
 				serializeLink(serializer, "edit" /* rel */, entry.getEditUri(),

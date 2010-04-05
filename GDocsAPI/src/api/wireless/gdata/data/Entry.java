@@ -30,6 +30,7 @@ public class Entry {
     private String etag = null;
     private String title = null;
     private String editUri = null;
+    private String selfUri = null;
     private String htmlUri = null;
     private String summary = null;
     private String content = null;
@@ -72,6 +73,7 @@ public class Entry {
         deleted = entry.deleted;
         starred = entry.starred;
         label = entry.label;
+        selfUri = entry.selfUri;
     }
 
     /**
@@ -96,6 +98,7 @@ public class Entry {
         starred = false;
         label = null;
         mime = null;
+        selfUri = null;
     }
     
     public String getEtag() { return etag; }
@@ -354,6 +357,7 @@ public class Entry {
         appendIfNotNull(sb, "UPDATE DATE", updateDate);
         appendIfNotNull(sb, "DELETED", String.valueOf(deleted));
         appendIfNotNull(sb, "STARRED", String.valueOf(starred));
+        appendIfNotNull(sb, "SELF", String.valueOf(selfUri));
     }
 
     /**
@@ -395,6 +399,14 @@ public class Entry {
      */
     public void setMime(String mime) {
         this.mime = mime;
+    }
+    
+    public void setSelfUri(String href){
+    	selfUri = href;
+    }
+    
+    public String getSelfUri(){
+    	return selfUri;
     }
 
     public void validate() throws ParseException {
