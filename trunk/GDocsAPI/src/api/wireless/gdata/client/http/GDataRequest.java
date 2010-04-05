@@ -16,6 +16,7 @@
 package api.wireless.gdata.client.http;
 
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import android.util.Log;
 import api.wireless.gdata.DateTime;
 import api.wireless.gdata.client.GDataProtocol;
 import api.wireless.gdata.client.TokenFactory;
@@ -402,9 +404,13 @@ public class GDataRequest {
 			}
 			break;
 		case UPDATE:
+			if (etag != null) {
+				setHeader(GDataProtocol.Header.IF_MATCH, "*");
+			}
+			break;
 		case DELETE:
 			if (etag != null) {
-				setHeader(GDataProtocol.Header.IF_MATCH, etag);
+				setHeader(GDataProtocol.Header.IF_MATCH, "*");
 			}
 			break;
 		default:

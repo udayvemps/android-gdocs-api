@@ -107,6 +107,9 @@ public class XmlWorksheetsGDataParser extends XmlGDataParser {
                 && "application/atom+xml".equals(type)) {
             WorksheetEntry sheet = (WorksheetEntry) entry;
             sheet.setCellFeedUri(href);
+        }  else if("self".equals(rel) && "application/atom+xml".equals(type)) {
+        	WorksheetEntry sheet = (WorksheetEntry) entry;
+            sheet.setSelfUri(href);
         }
     }
 }

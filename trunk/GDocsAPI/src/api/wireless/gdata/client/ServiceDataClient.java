@@ -24,6 +24,7 @@ import java.net.URL;
 import java.util.HashMap;
 
 import android.util.Log;
+import api.wireless.gdata.BufferOutputStream;
 import api.wireless.gdata.client.TokenFactory.ClientLoginAccountType;
 import api.wireless.gdata.client.TokenFactory.UserToken;
 import api.wireless.gdata.client.http.GDataRequest;
@@ -178,11 +179,10 @@ public class ServiceDataClient extends Service implements GDataClient {
 		InputStream entryStream = null;
 		try {
 			GDataRequest request = createUpdateRequest(editUri);
-			request.setEtag(etag);			
+			request.setEtag(etag);	
 			
 			OutputStream os = request.getRequestStream();
 			entry.serialize(os, GDataSerializer.FORMAT_UPDATE);
-			os.flush();
 
 			request.execute();
 			entryStream = request.getResponseStream();			
