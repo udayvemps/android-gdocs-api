@@ -9,6 +9,9 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import api.wireless.BufferOutputStream;
+import api.wireless.StringInputStream;
+import api.wireless.TestUtils;
 import api.wireless.gdata.client.AbstructParserFactory;
 import api.wireless.gdata.data.Entry;
 import api.wireless.gdata.data.Feed;
@@ -127,9 +130,10 @@ public class WorksheetEntryTest extends TestCase {
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
-		createWorksheetEntry = clearWhiteSpaces(createWorksheetEntry);
-		actual = clearWhiteSpaces(actual);
-		assertEquals(-1, findDifference(actual, createWorksheetEntry));
+		TestUtils util = new TestUtils();
+		createWorksheetEntry = util.clearWhiteSpaces(createWorksheetEntry);
+		actual = util.clearWhiteSpaces(actual);
+		assertEquals(-1, util.findDifference(actual, createWorksheetEntry));
 	}
 	
 	public void testUpdateWorksheetEntry(){
@@ -159,10 +163,10 @@ public class WorksheetEntryTest extends TestCase {
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
-		
-		updateWorksheetEntry = clearWhiteSpaces(updateWorksheetEntry);
-		actual = clearWhiteSpaces(actual);
-		assertEquals(-1, findDifference(actual, updateWorksheetEntry));
+		TestUtils util = new TestUtils();
+		updateWorksheetEntry = util.clearWhiteSpaces(updateWorksheetEntry);
+		actual = util.clearWhiteSpaces(actual);
+		assertEquals(-1, util.findDifference(actual, updateWorksheetEntry));
 
 	}
 	
@@ -189,29 +193,5 @@ public class WorksheetEntryTest extends TestCase {
 					entry.getEditUri());
 		
 		
-	}
-
-	private int findDifference(String actual, String expected) {
-		int index = -1;
-		for(int i = 0; i < actual.length(); i++){
-			char ac = actual.charAt(i);
-			char ex = expected.charAt(i);
-			if(ac != ex){
-				index = i;
-				break;
-			}
-		}
-		return index;
-	}
-
-	private String clearWhiteSpaces(String string) {
-		StringBuffer buffer = new StringBuffer();
-		for(int i = 0; i < string.length(); i++){
-			char ch = string.charAt(i);
-			if(ch != '\n' && ch != ' '){
-				buffer.append(ch);
-			}
-		}
-		return buffer.toString();
 	}
 }

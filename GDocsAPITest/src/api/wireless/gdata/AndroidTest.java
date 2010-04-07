@@ -4,6 +4,8 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 
+import api.wireless.BufferOutputStream;
+import api.wireless.TestUtils;
 import api.wireless.gdata.client.AbstructParserFactory;
 import api.wireless.gdata.parser.ParseException;
 import api.wireless.gdata.spreadsheets.data.WorksheetEntry;
@@ -42,32 +44,11 @@ public class AndroidTest extends TestCase {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		createWorksheetEntry = clearWhiteSpaces(createWorksheetEntry);
-		actual = clearWhiteSpaces(actual);
-		assertEquals(-1, findDifference(actual, createWorksheetEntry));
+		TestUtils util = new TestUtils();
+		createWorksheetEntry = util.clearWhiteSpaces(createWorksheetEntry);
+		actual = util.clearWhiteSpaces(actual);
+		assertEquals(-1, util.findDifference(actual, createWorksheetEntry));
 	}
 
-	private int findDifference(String actual, String expected) {
-		int index = -1;
-		for(int i = 0; i < actual.length(); i++){
-			char ac = actual.charAt(i);
-			char ex = expected.charAt(i);
-			if(ac != ex){
-				index = i;
-				break;
-			}
-		}
-		return index;
-	}
-
-	private String clearWhiteSpaces(String string) {
-		StringBuffer buffer = new StringBuffer();
-		for(int i = 0; i < string.length(); i++){
-			char ch = string.charAt(i);
-			if(ch != '\n' && ch != ' '){
-				buffer.append(ch);
-			}
-		}
-		return buffer.toString();
-	}
+	
 }
