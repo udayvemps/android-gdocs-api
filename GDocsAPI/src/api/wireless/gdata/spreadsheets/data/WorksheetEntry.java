@@ -102,4 +102,29 @@ public class WorksheetEntry extends Entry {
     public void setRowCount(int rowCount) {
         this.rowCount = rowCount;
     }
+
+	public String getCellRangeQueryFeedUri(int minRow, int minCol, int maxRow, int maxCol) {
+		if(minRow < 1 || minCol < 1){
+			throw new IllegalArgumentException("Can't have minrow or mincol less than one");
+		}
+		
+		String feed = getCellFeedUri();
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append(feed);
+		sb.append("?");
+		sb.append("min-row=");
+		sb.append(minRow);
+		sb.append("&");
+		sb.append("min-col=");
+		sb.append(minCol);
+		sb.append("&");
+		sb.append("max-row=");
+		sb.append(maxRow);
+		sb.append("&");
+		sb.append("max-col=");
+		sb.append(maxCol);
+		
+		return sb.toString();
+	}
 }

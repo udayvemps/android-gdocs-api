@@ -107,5 +107,7 @@ public class CellEntryTest extends TestCase {
 		assertEquals("3",
 					entry.getValue());
 	}
+	
+	
 
 }
