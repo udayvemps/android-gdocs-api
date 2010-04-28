@@ -194,4 +194,36 @@ public class WorksheetEntryTest extends TestCase {
 		
 		
 	}
+	
+	public void testGetCellRangeUrl(){
+		WorksheetEntry we = new WorksheetEntry();
+		we.setCellFeedUri("http://spreadsheets.google.com/feeds/cells/key/worksheetId/private/full");
+		
+		String actual = we.getCellRangeQueryFeedUri(1, 2, 3, 4);
+		
+		assertEquals("http://spreadsheets.google.com/feeds/cells/key/worksheetId/private/full?min-row=1&min-col=2&max-row=3&max-col=4",
+				actual);
+	}
+	
+	public void testGetCellRangeUrlMinRowGreaterThanZero(){
+		try{
+		WorksheetEntry we = new WorksheetEntry();
+		we.setCellFeedUri("http://spreadsheets.google.com/feeds/cells/key/worksheetId/private/full");
+		String actual = we.getCellRangeQueryFeedUri(0, 1, 2, 3);
+		fail("Minrow must be larger than zero");
+		}catch(IllegalArgumentException iae){
+			
+		}
+	}
+	
+	public void testGetCellRangeUrlMinColGreaterThanZero(){
+		try{
+		WorksheetEntry we = new WorksheetEntry();
+		we.setCellFeedUri("http://spreadsheets.google.com/feeds/cells/key/worksheetId/private/full");
+		String actual = we.getCellRangeQueryFeedUri(1, 0, 2, 3);
+		fail("Mincol must be larger than zero");
+		}catch(IllegalArgumentException iae){
+			
+		}
+	}
 }
