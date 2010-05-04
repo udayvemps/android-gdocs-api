@@ -19,6 +19,7 @@ package api.wireless.gdata.parser.xml;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.util.Log;
 import api.wireless.gdata.data.Entry;
 import api.wireless.gdata.data.Feed;
 import api.wireless.gdata.parser.GDataParser;
@@ -34,7 +35,9 @@ import java.io.InputStream;
  * {@link GDataParser} that uses an {@link XmlPullParser} to parse a GData feed.
  */
 // NOTE: we do not perform any validity checks on the XML.
-public class XmlGDataParser implements GDataParser {
+public class XmlGDataParser  implements GDataParser {
+	
+	public static final String TAG = "XmlGDataParser";
 
 	/** Namespace URI for Atom */
 	public static final String NAMESPACE_ATOM_URI =
@@ -116,6 +119,7 @@ public class XmlGDataParser implements GDataParser {
 			switch (eventType) {
 			case XmlPullParser.START_TAG:
 				String name = parser.getName();
+				Log.d(TAG, "START_TAG: " + name);
 				if ("feed".equals(name)) {
 					try {
 						return parseFeed();
@@ -192,6 +196,7 @@ public class XmlGDataParser implements GDataParser {
 			switch (eventType) {
 			case XmlPullParser.START_TAG:
 				String name = parser.getName();
+				Log.d(TAG, "START_TAG: " + name);
 				if ("startIndex".equals(name)) {
 					feed.setStartIndex(StringUtil.parseInt(
 							XmlUtil.extractChildText(parser), 0));
@@ -219,6 +224,7 @@ public class XmlGDataParser implements GDataParser {
 						parser.getAttributeValue(null /* ns */, "type");
 					String href =
 						parser.getAttributeValue(null /* ns */, "href");
+					Log.d("TAG", "rel: " + rel);
 					if ("next".equals(rel)) {
 						feed.setNext(href);					
 					} 				
