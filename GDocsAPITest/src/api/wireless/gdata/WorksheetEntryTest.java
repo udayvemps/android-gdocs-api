@@ -191,9 +191,43 @@ public class WorksheetEntryTest extends TestCase {
 					entry.getCellFeedUri());
 		assertEquals("http://spreadsheets.google.com/feeds/worksheets/t9Vty0Ub77fApMbtxDFY7KA/private/full/od7/0",
 					entry.getEditUri());
-		
-		
 	}
+	
+	public void testGetWorksheetEntryCheckListFeed() throws XmlPullParserException, ParseException, IOException{
+		InputStream inputStream = new StringInputStream(getWorksheetEntry);
+		XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        XmlPullParser rawParser = factory.newPullParser(); 
+		XmlWorksheetsGDataParser parser = new XmlWorksheetsGDataParser(inputStream, rawParser);
+		Feed feed = parser.init();
+		WorksheetEntry entry = null;
+		while(parser.hasMoreData()){
+			entry = (WorksheetEntry)parser.readNextEntry(entry);
+			if(entry.getTitle().equals("Title")){
+				break;
+			}
+		}
+		
+		assertEquals("http://spreadsheets.google.com/feeds/list/t9Vty0Ub77fApMbtxDFY7KA/od7/private/full", 
+					entry.getListFeedUri());
+	}
+	
+	public void testListFeedIsMissing(){
+		WorksheetEntry worksheet = new WorksheetEntry();
+		worksheet.setCellFeedUri("http://spreadsheets.google.com/feeds/cells/t9Vty0Ub77fApMbtxDFY7KA/od7/private/full");
+		String listFeedUri = worksheet.getListFeedUri();
+		assertEquals("http://spreadsheets.google.com/feeds/list/t9Vty0Ub77fApMbtxDFY7KA/od7/private/full", listFeedUri);	
+	}
+	
+	public void testListFeedQuery(){
+		WorksheetEntry worksheet = new WorksheetEntry();
+		worksheet.setListFeedUri("http://spreadsheets.google.com/feeds/list/t9Vty0Ub77fApMbtxDFY7KA/od7/private/full");
+		String query = "a=b and c=d";
+		String listFeedUri = worksheet.getListFeedUriWithQuery(query);
+		assertEquals("http://spreadsheets.google.com/feeds/list/t9Vty0Ub77fApMbtxDFY7KA/od7/private/full?sq=a%3Db+and+c%3Dd", listFeedUri);
+	}
+	
+	
 	
 	public void testGetCellRangeUrl(){
 		WorksheetEntry we = new WorksheetEntry();
@@ -226,4 +260,6 @@ public class WorksheetEntryTest extends TestCase {
 			
 		}
 	}
+	
+	
 }
