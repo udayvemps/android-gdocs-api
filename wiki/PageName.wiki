@@ -1,9 +1,0 @@
-#summary CodeSnipplets
-
-= Introduction =
-
-Here are some codesnipplets of how to use some parts of the api.
-
-= Details =
-
-[Example_1] Basic spreadsheet and cellmanipulation 
