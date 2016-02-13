@@ -1,0 +1,1 @@
+This is implementation of Google Documents List Data API for Android platform.
